@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DroneVision</title>
+  <style>
+    :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --err:#f87171; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--text); }
+    main { max-width: 760px; margin: 0 auto; padding: 32px 16px; }
+    h1 { margin:0 0 4px; color:var(--accent); }
+    .sub { color:var(--muted); margin:0 0 24px; }
+    .card { background:var(--card); border-radius:12px; padding:20px; margin-bottom:16px; }
+    input[type=file] { width:100%; margin-bottom:12px; color:var(--text); }
+    button { background:var(--accent); color:#0f172a; border:0; border-radius:8px; padding:10px 18px; font-weight:600; cursor:pointer; }
+    button:disabled { opacity:.6; cursor:wait; }
+    .erro { border-left:4px solid var(--err); }
+    .erro strong { color:var(--err); }
+    img { max-width:100%; border-radius:8px; margin-bottom:12px; }
+    .descricao { font-size:1.2rem; margin:0 0 4px; }
+    .muted { color:var(--muted); font-size:.9rem; }
+    ul { list-style:none; padding:0; margin:0; }
+    li { display:flex; align-items:center; gap:10px; margin:6px 0; }
+    .nome { width:150px; flex-shrink:0; }
+    .barra { flex:1; background:#0f172a; border-radius:6px; height:10px; overflow:hidden; }
+    .barra span { display:block; height:100%; background:var(--accent); }
+    .pct { width:52px; text-align:right; color:var(--muted); font-size:.85rem; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>DroneVision</h1>
+  <p class="sub">Envie uma foto capturada pelo drone e receba a descrição e as etiquetas geradas pelo Azure AI Vision.</p>
+
+  <form class="card" id="form" method="post" action="/analisar" enctype="multipart/form-data">
+    <input type="file" name="imagem" accept="image/jpeg,image/png,image/gif,image/bmp" required>
+    <button type="submit" id="botao">Analisar imagem</button>
+  </form>
+
+  {% if erro %}
+  <div class="card erro" role="alert"><strong>Não foi possível analisar a imagem.</strong><p>{{ erro }}</p></div>
+  {% endif %}
+
+  {% if previa %}
+  <div class="card">
+    <img src="{{ previa }}" alt="Imagem enviada">
+    {% if descricao %}
+      <h2>Descrição</h2>
+      <p class="descricao">{{ descricao|capitalize }}</p>
+      {% if confianca is not none %}<p class="muted">Confiança: {{ '%.1f'|format(confianca * 100) }}%</p>{% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if descricao %}
+  <div class="card">
+    <h2>Etiquetas identificadas</h2>
+    {% if tags %}
+    <ul>
+      {% for tag in tags %}
+      <li>
+        <span class="nome">{{ tag.name }}</span>
+        <span class="barra"><span style="width: {{ '%.0f'|format((tag.confidence or 0) * 100) }}%"></span></span>
+        <span class="pct">{{ '%.1f'|format((tag.confidence or 0) * 100) }}%</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">Nenhuma etiqueta foi retornada para esta imagem.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+</main>
+<script>
+  document.getElementById('form').addEventListener('submit', function () {
+    var b = document.getElementById('botao');
+    b.disabled = true; b.textContent = 'Analisando...';
+  });
+</script>
+</body>
+</html>
